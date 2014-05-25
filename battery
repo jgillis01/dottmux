@@ -10,7 +10,6 @@ cutinate()
     perc=$1
     inc=$(( 100 / $NUM_HEARTS))
 
-
     for i in `seq $NUM_HEARTS`; do
         if [ $perc -lt 100 ]; then
             echo $HEART_EMPTY
@@ -43,12 +42,28 @@ battery_status()
 case $(uname -s) in
     "Linux")
         BATPATH=/sys/class/power_supply/BAT0
-        STATUS=$BATPATH/status
+        STATUS=$(cat $BATPATH/status)
         BAT_FULL=$BATPATH/energy_full
         BAT_NOW=$BATPATH/energy_now
-        if [ "$1" = `cat $STATUS` -o "$1" = "" ]; then
-            linux_get_bat
+        if [ ! -f $BAT_FULL ]; then
+          BAT_FULL=$BATPATH/charge_full
+          BAT_NOW=$BATPATH/charge_now
         fi
+        case $1 in
+            "Discharging")
+                if [ $STATUS = "Discharging" ]; then
+                    linux_get_bat
+                fi
+                ;;
+            "Charging")
+                if [ $STATUS = "Charging" ]; then
+                  linux_get_bat
+                fi
+                ;;
+            "")
+                linux_get_bat
+                ;;
+        esac
         ;;
     "FreeBSD")
         STATUS=`sysctl -n hw.acpi.battery.state`
